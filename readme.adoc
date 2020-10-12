@@ -1,17 +1,168 @@
 # Python Sql Query Builder
 :author: Alphastrick
+:sourcehighlighter: rouge
 :toc:
 
 ## Introduction
+
+This library creates Sql-Queries from an ast.
 
 ## Library
 
 ### Structure
 
-.Library Architecture Overview
+.Query AST
 [plantuml,arch,svg,align="center"]
 ----
 @startuml
-!include doc/uml/arch.puml
+
+    interface Builder {
+        + <visitNode>(node: <NodeType>)
+        + build(statement: Statement)
+    }
+
+    class mysql.Builder implements Builder {}
+
+    interface Node {
+        + acceptVisitor()
+    }
+
+    class ReferenceList implements Node {
+        + add(reference: Reference)
+        + remove(reference: Reference)
+        + iteratable
+    }
+
+    class JoinList implements Node {
+        + add(join: Join)
+        + remove(join: Join)
+        + iteratable
+    }
+
+    interface Statement {}
+
+    class InsertQuery <TBB> implements Statement {}
+    class UpdateQuery <TBB> implements Statement {}
+    class DeleteQuery <TBB> implements Statement {}
+    class SelectQuery implements Statement {
+        + fields : ReferenceList
+        + tables : ReferenceList
+        + joins : JoinList
+        + condition : Condition
+        + order : Order
+        + page : Page
+    }
+
+
+    interface Option {}
+    class Join implements Option {
+        + reference : Reference
+        + condition : Expression
+        + setJoin(join_type : JoinType)
+        + isJoin(join_type : JoinType) : bool
+    }
+    class Page implements Option {
+        + index : int
+        + size : int
+    }
+    class Order implements Option {
+        + expression : Expression
+        + setOrder(order_type : OrderType)
+        + isOrder(order_type : OrderType) : bool
+    }
+    class Condition implements Option {
+        + reference : Reference
+        + setOrder(order_type: OrderType)
+        + istOrder(order_type: OrderType) : bool
+    }
+
+    interface Expression {}    
+    class Reference implements Expression {
+        + reference : str
+        + alias : str
+    }
+    class StringValue implements Expression {
+        + value : str
+        + get() : str
+        + set(value: str)
+    }
+    class NumericValue implements Expression {
+        + value : float
+        + get() : float
+        + set(value: float)
+    }
+    interface Logic extends Expression {}
+    class LogicNode implements Logic {
+        + left: Expression
+        + right: Expression
+    }
+    class And extends LogicNode {}
+    class Or extends LogicNode {}
+    class Equal extends LogicNode {}
+    class Unequal extends LogicNode {}
+    class Greater extends LogicNode {}
+    class Less extends LogicNode {}
+
+    Condition -- Expression
+
+    Builder -- Node
+    Node -- Statement
+
+    InsertQuery -- Option
+    UpdateQuery -- Option
+    DeleteQuery -- Option
+    SelectQuery -- Option
+
 @enduml
 ----
+
+NOTE: In order to make the diagram more readable some references are not displayed
+
+### Example
+
+.Read Product Data (id, price, localized name)
+[python]
+----
+# Get builder (mysql) and query statement (select)
+builder = mysqlquery.Builder()
+qry = query.Select()
+
+# Add fields
+qry.fields.add(query.Reference("p.id", alias="id"))
+qry.fields.add(query.Reference("p.price", alias="price"))
+qry.fields.add(query.Reference("localized_names.name", alias="name"))
+
+# Add tables
+qry.tables.add(query.Reference("producs", alias="p"))
+
+# Add join
+qry.joins.add(query.Join(
+    query.Reference("localized_names"),
+    query.JoinType.INNER,
+    query.Equal(
+        query.Reference("p.id"),
+        query.Reference("localized_names.product_id")
+    )
+))
+
+# Sort records by localized name
+qry.order = query.Order(
+    query.Reference("localized_names.name"),
+    query.OrderType.ASC
+)
+
+# Load first 25 records
+qry.page = query.Page(0, 25)
+
+# Create sql from ast
+sql = builder.build(qry)
+----
+
+### Roadmap
+
+* adding missing statements
+* add `call` statement
+* add type-checking
+* nested statements / subqueries
+* more logic nodes (like, greater-equal, ...)
+* functions

@@ -1,43 +1,97 @@
 @startuml
 
-    interface Builder {}
+    interface Builder {
+        + <visitNode>(node: <NodeType>)
+        + build(statement: Statement)
+    }
+
+    class mysql.Builder implements Builder {}
+
+    interface Node {
+        + acceptVisitor()
+    }
+
+    class ReferenceList implements Node {
+        + add(reference: Reference)
+        + remove(reference: Reference)
+        + iteratable
+    }
+
+    class JoinList implements Node {
+        + add(join: Join)
+        + remove(join: Join)
+        + iteratable
+    }
 
     interface Statement {}
 
-    class InsertQuery implements Statement {}
-    class UpdateQuery implements Statement {}
-    class DeleteQuery implements Statement {}
+    class InsertQuery <TBB> implements Statement {}
+    class UpdateQuery <TBB> implements Statement {}
+    class DeleteQuery <TBB> implements Statement {}
     class SelectQuery implements Statement {
-        + fields
-        + tables
-        + order
-        + page
-        + condition
+        + fields : ReferenceList
+        + tables : ReferenceList
+        + joins : JoinList
+        + condition : Condition
+        + order : Order
+        + page : Page
     }
 
 
     interface Option {}
     class Join implements Option {
-
+        + reference : Reference
+        + condition : Expression
+        + setJoin(join_type : JoinType)
+        + isJoin(join_type : JoinType) : bool
     }
     class Page implements Option {
-
+        + index : int
+        + size : int
     }
     class Order implements Option {
-
+        + expression : Expression
+        + setOrder(order_type : OrderType)
+        + isOrder(order_type : OrderType) : bool
     }
     class Condition implements Option {
+        + reference : Reference
+        + setOrder(order_type: OrderType)
+        + istOrder(order_type: OrderType) : bool
     }
 
     interface Expression {}    
-    class StringValue implements Expression {}
-    class NumericValue implements Expression {}
+    class Reference implements Expression {
+        + reference : str
+        + alias : str
+    }
+    class StringValue implements Expression {
+        + value : str
+        + get() : str
+        + set(value: str)
+    }
+    class NumericValue implements Expression {
+        + value : float
+        + get() : float
+        + set(value: float)
+    }
     interface Logic extends Expression {}
-    class DemoLogicElement implements Logic {}
+    class LogicNode implements Logic {
+        + left: Expression
+        + right: Expression
+    }
+    class And extends LogicNode {}
+    class Or extends LogicNode {}
+    class Equal extends LogicNode {}
+    class Unequal extends LogicNode {}
+    class Greater extends LogicNode {}
+    class Less extends LogicNode {}
 
     Condition -- Expression
 
-    Builder -- Statement
+    Builder -- Node
+    Node -- Statement
+
     InsertQuery -- Option
     UpdateQuery -- Option
     DeleteQuery -- Option
