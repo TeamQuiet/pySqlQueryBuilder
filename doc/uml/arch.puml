@@ -1,0 +1,46 @@
+@startuml
+
+    interface Builder {}
+
+    interface Statement {}
+
+    class InsertQuery implements Statement {}
+    class UpdateQuery implements Statement {}
+    class DeleteQuery implements Statement {}
+    class SelectQuery implements Statement {
+        + fields
+        + tables
+        + order
+        + page
+        + condition
+    }
+
+
+    interface Option {}
+    class Join implements Option {
+
+    }
+    class Page implements Option {
+
+    }
+    class Order implements Option {
+
+    }
+    class Condition implements Option {
+    }
+
+    interface Expression {}    
+    class StringValue implements Expression {}
+    class NumericValue implements Expression {}
+    interface Logic extends Expression {}
+    class DemoLogicElement implements Logic {}
+
+    Condition -- Expression
+
+    Builder -- Statement
+    InsertQuery -- Option
+    UpdateQuery -- Option
+    DeleteQuery -- Option
+    SelectQuery -- Option
+
+@enduml

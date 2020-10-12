@@ -1,0 +1,17 @@
+# Python Sql Query Builder
+:author: Alphastrick
+:toc:
+
+## Introduction
+
+## Library
+
+### Structure
+
+.Library Architecture Overview
+[plantuml,arch,svg,align="center"]
+----
+@startuml
+!include doc/uml/arch.puml
+@enduml
+----
